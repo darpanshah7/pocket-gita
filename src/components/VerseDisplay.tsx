@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme';
 import type { Verse, TranslationKey, PreferredLanguage } from '../types';
-import { TRANSLATION_LABELS, TRANSLATION_KEYS } from '../types';
+import { TRANSLATION_LABELS, TRANSLATION_KEYS, resolveSpeaker } from '../types';
 import { DropdownPicker } from './DropdownPicker';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
   isFavorite: boolean;
   onToggleFavorite: () => void;
   onNotePress: () => void;
+  hasNote?: boolean;
   showCommentary?: boolean;
   language?: PreferredLanguage;
   textSize?: number;   // multiplier applied to all body fonts, default 1.0
@@ -23,6 +24,7 @@ export function VerseDisplay({
   isFavorite,
   onToggleFavorite,
   onNotePress,
+  hasNote = false,
   showCommentary = false,
   language = 'english',
   textSize = 1.0,
@@ -57,7 +59,7 @@ export function VerseDisplay({
           Chapter {verse.chapter} · Verse {verse.verse}
         </Text>
         {verse.speaker ? (
-          <Text style={[styles.speaker, { color: c.textMuted }]}>— {verse.speaker}</Text>
+          <Text style={[styles.speaker, { color: c.textMuted }]}>— {resolveSpeaker(verse.speaker, language)}</Text>
         ) : null}
       </View>
 
@@ -172,7 +174,7 @@ export function VerseDisplay({
           style={[styles.actionBtn, { backgroundColor: c.surface, borderColor: c.border }]}
         >
           <Ionicons name="create-outline" size={22} color={c.accent} />
-          <Text style={[styles.actionLabel, { color: c.textMuted }]}>Add Note</Text>
+          <Text style={[styles.actionLabel, { color: c.textMuted }]}>{hasNote ? 'Edit Note' : 'Add Note'}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

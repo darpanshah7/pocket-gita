@@ -1,17 +1,18 @@
 export type TranslationKey = 'siva' | 'gambir' | 'chinmay' | 'tej' | 'prabhu' | 'san' | 'vallabh';
 
+
 export const TRANSLATION_LABELS: Record<TranslationKey, string> = {
   siva:    'Swami Sivananda (English)',
   gambir:  'Swami Gambhirananda (English)',
   chinmay: 'Swami Chinmayananda (English)',
-  tej:     'Swami Tejomayananda (English)',
+  tej:     'Swami Tejomayananda (Hindi)',
   prabhu:  'Swami Prabhupada (English)',
-  san:     'Adi Shankaracharya (Hindi)',
+  san:     'Adi Shankaracharya (English)',
   vallabh: 'Shri Vallabhacharya (Hindi)',
 };
 
 // English translations first, Hindi last
-export const TRANSLATION_KEYS: TranslationKey[] = ['siva', 'gambir', 'chinmay', 'tej', 'prabhu', 'san', 'vallabh'];
+export const TRANSLATION_KEYS: TranslationKey[] = ['siva', 'gambir', 'chinmay', 'prabhu', 'san', 'tej'];
 
 export interface Translation {
   text: string;
@@ -70,6 +71,18 @@ export interface Note {
 
 export type VerseOrder = 'sequential' | 'random';
 export type PreferredLanguage = 'english' | 'sanskrit';
+
+const SPEAKER_EN: Record<string, string> = {
+  'धृतराष्ट्र': 'Dhritarashtra',
+  'सञ्जय':      'Sanjaya',
+  'अर्जुन':     'Arjuna',
+  'श्रीभगवान्': 'Shri Bhagavan',
+};
+
+export function resolveSpeaker(speaker: string, language: PreferredLanguage): string {
+  if (language === 'english') return SPEAKER_EN[speaker] ?? speaker;
+  return speaker;
+}
 export type BrowseScrollMode = 'list' | 'pager';
 export type AppTheme = 'light' | 'dark' | 'system';
 
@@ -93,7 +106,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   preferred_language: 'english',
   browse_scroll_mode: 'list',
   text_size: 1.0,
-  last_verse_index: 0,
+  last_verse_index: -1,
   last_verse_date: '',
   notifications_enabled: false,
   theme: 'system',

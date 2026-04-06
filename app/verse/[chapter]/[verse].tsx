@@ -7,6 +7,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useGitaData } from '@/src/hooks/useGitaData';
 import { useSettings } from '@/src/hooks/useSettings';
+import { resolveSpeaker } from '@/src/types';
 import { isFavorite, addFavorite, removeFavorite, getNote, upsertNote } from '@/src/db/queries';
 import { VerseDisplay } from '@/src/components/VerseDisplay';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
@@ -66,7 +67,7 @@ export default function VerseScreen() {
       <ScreenHeader
         showBack
         title={`BG ${chapterNum}.${verseNum}`}
-        subtitle={verse.speaker || undefined}
+        subtitle={verse.speaker ? resolveSpeaker(verse.speaker, settings.preferred_language) : undefined}
       />
 
       <VerseDisplay
@@ -77,6 +78,7 @@ export default function VerseScreen() {
         isFavorite={favorite}
         onToggleFavorite={toggleFavorite}
         onNotePress={() => setNoteOpen(true)}
+        hasNote={noteText.length > 0}
         showCommentary
       />
 

@@ -91,6 +91,7 @@ export default function DailyScreen() {
         isFavorite={favorite}
         onToggleFavorite={toggleFavorite}
         onNotePress={() => setNoteModalOpen(true)}
+        hasNote={noteText.length > 0}
         showCommentary
       />
 

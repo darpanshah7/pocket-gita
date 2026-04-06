@@ -38,10 +38,11 @@ export function useDailyVerse() {
       }
 
       let nextIndex: number;
+      const isFirstEver = !lastDate || (lastIndex as number) < 0;
       if (order === 'sequential') {
-        nextIndex = ((lastIndex as number) + 1) % total;
+        nextIndex = isFirstEver ? 0 : ((lastIndex as number) + 1) % total;
       } else {
-        nextIndex = randomIndexExcluding(total, lastIndex as number);
+        nextIndex = isFirstEver ? 0 : randomIndexExcluding(total, lastIndex as number);
       }
 
       await setSetting('last_verse_index', nextIndex);
