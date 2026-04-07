@@ -50,6 +50,7 @@ export function VerseDisplay({
     return t && (t.text || t.commentary);
   });
   const currentTranslation = verse.translations[selectedTranslation] ?? verse.translations[availableKeys[0]];
+  // chinmay has no translation text — show commentary as body instead
   const isChinmayOnly = selectedTranslation === 'chinmay' && !currentTranslation?.text;
   const transliterationLines = verse.transliteration.split('\n').filter(l => l.trim());
 

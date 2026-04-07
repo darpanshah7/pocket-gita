@@ -1,18 +1,21 @@
-export type TranslationKey = 'siva' | 'gambir' | 'chinmay' | 'tej' | 'prabhu' | 'san' | 'vallabh';
+export type TranslationKey = 'siva' | 'gambir' | 'chinmay' | 'tej' | 'prabhu' | 'san' | 'vallabh' | 'ramanHt' | 'sankarEt' | 'sankarHt';
 
 
 export const TRANSLATION_LABELS: Record<TranslationKey, string> = {
-  siva:    'Swami Sivananda (English)',
-  gambir:  'Swami Gambhirananda (English)',
-  chinmay: 'Swami Chinmayananda (Hindi)',
-  tej:     'Swami Tejomayananda (Hindi)',
-  prabhu:  'Swami Prabhupada (English)',
-  san:     'Adi Shankaracharya (English)',
-  vallabh: 'Shri Vallabhacharya (Hindi)',
+  siva:     'Swami Sivananda (English)',
+  gambir:   'Swami Gambhirananda (English)',
+  chinmay:  'Swami Chinmayananda (Hindi)',
+  tej:      'Swami Tejomayananda (Hindi)',
+  prabhu:   'Swami Prabhupada (English)',
+  san:      'Dr. S. Sankaranarayan (English)',
+  vallabh:  'Shri Vallabhacharya (Hindi)',
+  ramanHt:  'Sri Ramanuja (Hindi)',
+  sankarEt: 'Adi Shankaracharya (English)',
+  sankarHt: 'Adi Shankaracharya (Hindi)',
 };
 
-// English translations first, Hindi last; chinmay has no text — commentary only
-export const TRANSLATION_KEYS: TranslationKey[] = ['siva', 'gambir', 'prabhu', 'tej', 'chinmay'];
+// English first, Hindi last
+export const TRANSLATION_KEYS: TranslationKey[] = ['siva', 'gambir', 'prabhu', 'sankarEt', 'tej', 'ramanHt', 'sankarHt', 'chinmay'];
 
 export interface Translation {
   text: string;
