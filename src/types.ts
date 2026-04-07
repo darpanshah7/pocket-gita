@@ -4,15 +4,15 @@ export type TranslationKey = 'siva' | 'gambir' | 'chinmay' | 'tej' | 'prabhu' | 
 export const TRANSLATION_LABELS: Record<TranslationKey, string> = {
   siva:    'Swami Sivananda (English)',
   gambir:  'Swami Gambhirananda (English)',
-  chinmay: 'Swami Chinmayananda (English)',
+  chinmay: 'Swami Chinmayananda (Hindi)',
   tej:     'Swami Tejomayananda (Hindi)',
   prabhu:  'Swami Prabhupada (English)',
   san:     'Adi Shankaracharya (English)',
   vallabh: 'Shri Vallabhacharya (Hindi)',
 };
 
-// English translations first, Hindi last
-export const TRANSLATION_KEYS: TranslationKey[] = ['siva', 'gambir', 'chinmay', 'prabhu', 'san', 'tej'];
+// English translations first, Hindi last; chinmay has no text — commentary only
+export const TRANSLATION_KEYS: TranslationKey[] = ['siva', 'gambir', 'prabhu', 'tej', 'chinmay'];
 
 export interface Translation {
   text: string;

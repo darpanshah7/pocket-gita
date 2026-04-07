@@ -44,8 +44,13 @@ export function VerseDisplay({
     setShowSanskrit(language === 'sanskrit');
   }, [language]);
 
-  const availableKeys = TRANSLATION_KEYS.filter(k => verse.translations[k]);
+  // chinmay has no text — treat commentary as its translation body
+  const availableKeys = TRANSLATION_KEYS.filter(k => {
+    const t = verse.translations[k];
+    return t && (t.text || t.commentary);
+  });
   const currentTranslation = verse.translations[selectedTranslation] ?? verse.translations[availableKeys[0]];
+  const isChinmayOnly = selectedTranslation === 'chinmay' && !currentTranslation?.text;
   const transliterationLines = verse.transliteration.split('\n').filter(l => l.trim());
 
   return (
@@ -116,9 +121,19 @@ export function VerseDisplay({
           <Text style={[styles.sectionLabel, { color: c.accent }]}>
             {TRANSLATION_LABELS[selectedTranslation] ?? ''}
           </Text>
-          <Text style={[styles.translationText, { color: c.text, fontSize: fs(16), lineHeight: fs(26) }]}>{currentTranslation.text}</Text>
 
-          {showCommentary && currentTranslation.commentary ? (
+          {/* chinmay has no text — show commentary as main body */}
+          {isChinmayOnly ? (
+            currentTranslation.commentary
+              ? <Text style={[styles.translationText, { color: c.text, fontSize: fs(16), lineHeight: fs(26) }]}>{currentTranslation.commentary}</Text>
+              : <Text style={[styles.unavailable, { color: c.textMuted }]}>No commentary available</Text>
+          ) : (
+            currentTranslation.text
+              ? <Text style={[styles.translationText, { color: c.text, fontSize: fs(16), lineHeight: fs(26) }]}>{currentTranslation.text}</Text>
+              : <Text style={[styles.unavailable, { color: c.textMuted }]}>No translation available</Text>
+          )}
+
+          {showCommentary && !isChinmayOnly && currentTranslation.commentary ? (
             <>
               <TouchableOpacity
                 onPress={() => setCommExpanded(e => !e)}
@@ -242,6 +257,7 @@ const styles = StyleSheet.create({
   },
   commToggleText: { fontSize: 13, fontWeight: '600' },
   commentary: { fontSize: 13, lineHeight: 21, marginTop: 8, fontStyle: 'italic' },
+  unavailable: { fontSize: 14, fontStyle: 'italic', marginTop: 4 },
   actions: {
     flexDirection: 'row',
     gap: 12,
