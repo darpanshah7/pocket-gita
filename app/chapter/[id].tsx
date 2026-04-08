@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, useWindowDimensions, ScrollView,
+  ActivityIndicator, useWindowDimensions, ScrollView, Modal, Pressable,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +26,7 @@ export default function ChapterScreen() {
   const [modeOverride, setModeOverride] = useState<'list' | 'pager' | null>(null);
   const mode = modeOverride ?? (loaded ? settings.browse_scroll_mode : 'list');
   const [cardHeight, setCardHeight] = useState(0);
+  const [showVersePicker, setShowVersePicker] = useState(false);
 
   // Global script toggle — shared across all verse cards
   const [showSanskrit, setShowSanskrit] = useState(false);
@@ -148,6 +149,7 @@ export default function ChapterScreen() {
                     textScale={settings.text_size * browseTextMult}
                     showSanskrit={showSanskrit}
                     onToggleSanskrit={() => setShowSanskrit(s => !s)}
+                    onVerseBadgePress={() => setShowVersePicker(true)}
                   />
                 )
               }
@@ -179,6 +181,7 @@ export default function ChapterScreen() {
                     textScale={settings.text_size * browseTextMult}
                     showSanskrit={showSanskrit}
                     onToggleSanskrit={() => setShowSanskrit(s => !s)}
+                    onVerseBadgePress={() => setShowVersePicker(true)}
                   />
                 )
               }
@@ -186,6 +189,34 @@ export default function ChapterScreen() {
           )
         )}
       </View>
+
+      {/* Verse picker modal */}
+      <Modal visible={showVersePicker} transparent animationType="fade" onRequestClose={() => setShowVersePicker(false)}>
+        <Pressable style={styles.pickerOverlay} onPress={() => setShowVersePicker(false)}>
+          <Pressable style={[styles.pickerSheet, { backgroundColor: c.surface, borderColor: c.cardBorder }]} onPress={() => {}}>
+            <Text style={[styles.pickerTitle, { color: c.accent }]}>Jump to verse</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.pickerGrid}>
+                {chapter.verses.map(v => (
+                  <TouchableOpacity
+                    key={v.verse}
+                    style={[styles.pickerItem, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}
+                    onPress={() => {
+                      setShowVersePicker(false);
+                      // index = verse number (intro is 0, verse 1 is index 1)
+                      const idx = v.verse;
+                      const ref = mode === 'pager' ? pagerRef : listRef;
+                      ref.current?.scrollToIndex({ index: idx, animated: true });
+                    }}
+                  >
+                    <Text style={[styles.pickerItemText, { color: c.primary }]}>{v.verse}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -266,6 +297,7 @@ function VerseContent({
   textScale,
   showSanskrit,
   onToggleSanskrit,
+  onVerseBadgePress,
 }: {
   verse: Verse;
   chapterNum: number;
@@ -277,6 +309,7 @@ function VerseContent({
   textScale: number;
   showSanskrit: boolean;
   onToggleSanskrit: () => void;
+  onVerseBadgePress?: () => void;
 }) {
   function splitHemistich(hemistich: string): string[] {
     const words = hemistich.trim().split(/\s+/);
@@ -317,11 +350,11 @@ function VerseContent({
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.cardBorder, minHeight: height - 48 }]}>
           {/* Header — fixed small */}
           <View style={styles.cardHeader}>
-            <View style={[styles.numBadge, { backgroundColor: c.surfaceAlt }]}>
+            <TouchableOpacity style={[styles.numBadge, { backgroundColor: c.surfaceAlt }]} onPress={onVerseBadgePress} hitSlop={8}>
               <Text style={[styles.numText, { color: c.primary }]}>
                 {chapterNum}.{verse.verse}
               </Text>
-            </View>
+            </TouchableOpacity>
             <Text style={[styles.ofTotal, { color: c.textMuted }]}>of {totalVerses}</Text>
             <TouchableOpacity
               onPress={() => router.push(`/verse/${chapterNum}/${verse.verse}`)}
@@ -470,4 +503,43 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   moreText: { fontSize: 12, fontWeight: '600' },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerSheet: {
+    width: '80%',
+    maxHeight: '70%',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+  },
+  pickerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  pickerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+  },
+  pickerItem: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerItemText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });
