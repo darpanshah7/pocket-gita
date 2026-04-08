@@ -16,8 +16,9 @@ type ListItem = { type: 'intro' } | { type: 'verse'; verse: Verse };
 
 export default function ChapterScreen() {
   const c = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, verse: verseParam } = useLocalSearchParams<{ id: string; verse?: string }>();
   const chapterNum = parseInt(id ?? '1', 10);
+  const initialVerseIndex = verseParam ? parseInt(verseParam, 10) : 0; // 0 = intro card
   const { getChapter, loading } = useGitaData();
   const { settings, loaded } = useSettings();
   const { width } = useWindowDimensions();
@@ -49,13 +50,13 @@ export default function ChapterScreen() {
 
   // Called once each FlatList has finished its own layout — scroll imperatively.
   const handlePagerLayout = useCallback(() => {
-    const idx = currentIndexRef.current;
+    const idx = currentIndexRef.current > 0 ? currentIndexRef.current : initialVerseIndex;
     if (idx > 0) pagerRef.current?.scrollToIndex({ index: idx, animated: false });
-  }, []);
+  }, [initialVerseIndex]);
   const handleListLayout = useCallback(() => {
-    const idx = currentIndexRef.current;
+    const idx = currentIndexRef.current > 0 ? currentIndexRef.current : initialVerseIndex;
     if (idx > 0) listRef.current?.scrollToIndex({ index: idx, animated: false });
-  }, []);
+  }, [initialVerseIndex]);
 
   // Local browse text size (does not persist to settings)
   const BROWSE_TEXT_STEPS = [0.75, 0.85, 1.0, 1.15, 1.3];
@@ -382,9 +383,16 @@ function VerseContent({
               </Text>
             </View>
             {showSanskrit ? (
-              <Text style={[styles.sanskrit, { color: c.sanskrit, fontSize: fsS(21), lineHeight: fsS(35) }]}>
-                {verse.sanskrit}
-              </Text>
+              <View style={{ alignItems: 'center', paddingTop: 4 }}>
+                {verse.sanskrit.split('\n')
+                  .flatMap(line => splitHemistich(line.replace(/ \|$/, '').trim()))
+                  .filter(p => p.length > 0)
+                  .map((pada, i) => (
+                    <Text key={i} style={[styles.sanskrit, { color: c.sanskrit, fontSize: fsS(19), lineHeight: fsS(32), textAlign: 'center', marginBottom: 4 }]}>
+                      {pada}
+                    </Text>
+                  ))}
+              </View>
             ) : (
               <View style={{ alignItems: 'center', paddingTop: 4 }}>
                 {lines.map((pada, i) => (

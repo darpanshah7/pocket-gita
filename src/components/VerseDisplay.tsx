@@ -76,6 +76,12 @@ export function VerseDisplay({
     .flatMap(line => splitHemistich(line.replace(/ \.$/, '').replace(/\./g, ' ').trim()))
     .filter(p => p.length > 0);
 
+  // Sanskrit uses | (danda) as the hemistich terminator, same pada-split logic.
+  const sanskritPadas = verse.sanskrit
+    .split('\n')
+    .flatMap(line => splitHemistich(line.replace(/ \|$/, '').trim()))
+    .filter(p => p.length > 0);
+
   return (
     <ScrollView
       contentContainerStyle={[styles.container, { backgroundColor: c.background }]}
@@ -107,7 +113,11 @@ export function VerseDisplay({
             </Text>
           </View>
           {showSanskrit ? (
-            <Text style={[styles.sanskrit, { color: c.sanskrit, fontSize: fs(22), lineHeight: fs(36) }]}>{verse.sanskrit}</Text>
+            <View style={styles.padaBlock}>
+              {sanskritPadas.map((pada, i) => (
+                <Text key={i} style={[styles.sanskritLine, { color: c.sanskrit, fontSize: fs(20), lineHeight: fs(32) }]}>{pada}</Text>
+              ))}
+            </View>
           ) : (
             <View style={styles.padaBlock}>
               {transliterationPadas.map((pada, i) => (
@@ -131,7 +141,11 @@ export function VerseDisplay({
             </Text>
           </View>
           {showSanskrit ? (
-            <Text style={[styles.sanskrit, { color: c.sanskrit, fontSize: fs(22), lineHeight: fs(36) }]}>{verse.sanskrit}</Text>
+            <View style={styles.padaBlock}>
+              {sanskritPadas.map((pada, i) => (
+                <Text key={i} style={[styles.sanskritLine, { color: c.sanskrit, fontSize: fs(20), lineHeight: fs(32) }]}>{pada}</Text>
+              ))}
+            </View>
           ) : (
             <View style={styles.padaBlock}>
               {transliterationPadas.map((pada, i) => (
@@ -258,6 +272,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
     letterSpacing: 0.2,
+  },
+  sanskritLine: {
+    fontSize: 20,
+    lineHeight: 32,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+    marginBottom: 4,
   },
   sanskrit: {
     fontSize: 22,
