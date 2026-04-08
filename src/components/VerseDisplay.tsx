@@ -52,7 +52,14 @@ export function VerseDisplay({
   const currentTranslation = verse.translations[selectedTranslation] ?? verse.translations[availableKeys[0]];
   // chinmay has no translation text — show commentary as body instead
   const isChinmayOnly = selectedTranslation === 'chinmay' && !currentTranslation?.text;
-  const transliterationLines = verse.transliteration.split('\n').filter(l => l.trim());
+  // Split transliteration into individual padas (metrical units) for recitation-style display.
+  // Each \n-separated chunk may contain multiple padas separated by " ." (space-period).
+  // Note: "." within a word (e.g. "saṅgo.astvakarmaṇi") is sandhi — not a separator.
+  const transliterationPadas = verse.transliteration
+    .split('\n')
+    .flatMap(line => line.split(' .'))
+    .map(p => p.trim())
+    .filter(p => p.length > 0);
 
   return (
     <ScrollView
@@ -87,9 +94,14 @@ export function VerseDisplay({
           {showSanskrit ? (
             <Text style={[styles.sanskrit, { color: c.sanskrit, fontSize: fs(22), lineHeight: fs(36) }]}>{verse.sanskrit}</Text>
           ) : (
-            transliterationLines.map((line, i) => (
-              <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(18), lineHeight: fs(28) }]}>{line}</Text>
-            ))
+            <View style={styles.padaBlock}>
+              {transliterationPadas.map((pada, i) => (
+                <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(17), lineHeight: fs(28) }]}>{pada}</Text>
+              ))}
+              <Text style={[styles.verseMarker, { color: c.textMuted, fontSize: fs(12) }]}>
+                {'|| '}{verse.chapter}.{verse.verse}{' ||'}
+              </Text>
+            </View>
           )}
         </TouchableOpacity>
       ) : (
@@ -109,9 +121,14 @@ export function VerseDisplay({
           {showSanskrit ? (
             <Text style={[styles.sanskrit, { color: c.sanskrit, fontSize: fs(22), lineHeight: fs(36) }]}>{verse.sanskrit}</Text>
           ) : (
-            transliterationLines.map((line, i) => (
-              <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(18), lineHeight: fs(28) }]}>{line}</Text>
-            ))
+            <View style={styles.padaBlock}>
+              {transliterationPadas.map((pada, i) => (
+                <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(17), lineHeight: fs(28) }]}>{pada}</Text>
+              ))}
+              <Text style={[styles.verseMarker, { color: c.textMuted, fontSize: fs(12) }]}>
+                {'|| '}{verse.chapter}.{verse.verse}{' ||'}
+              </Text>
+            </View>
           )}
         </TouchableOpacity>
       )}
@@ -239,12 +256,23 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     letterSpacing: 0.5,
   },
+  padaBlock: {
+    alignItems: 'center',
+    paddingTop: 4,
+  },
   transliterationLine: {
-    fontSize: 18,
+    fontSize: 17,
     lineHeight: 28,
     fontStyle: 'italic',
     letterSpacing: 0.3,
-    marginBottom: 6,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  verseMarker: {
+    marginTop: 10,
+    letterSpacing: 1,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   translationText: {
     fontSize: 16,
