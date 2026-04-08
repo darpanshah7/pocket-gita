@@ -52,7 +52,35 @@ export function VerseDisplay({
   const currentTranslation = verse.translations[selectedTranslation] ?? verse.translations[availableKeys[0]];
   // chinmay has no translation text — show commentary as body instead
   const isChinmayOnly = selectedTranslation === 'chinmay' && !currentTranslation?.text;
-  const transliterationLines = verse.transliteration.split('\n').filter(l => l.trim());
+  // Split each hemistich (half-verse) into 2 padas at the midpoint word boundary.
+  // The data stores each hemistich as a \n-separated line ending with " .".
+  // Lines with ≤2 words (e.g. speaker declarations like "dhṛtarāṣṭra uvāca") are kept whole.
+  function splitHemistich(hemistich: string): string[] {
+    const words = hemistich.trim().split(/\s+/);
+    if (words.length <= 2) return [hemistich.trim()];
+    const totalLen = hemistich.trim().length;
+    const mid = totalLen / 2;
+    let cumLen = 0;
+    let bestSplit = Math.floor(words.length / 2);
+    let bestDist = Infinity;
+    for (let i = 0; i < words.length - 1; i++) {
+      cumLen += words[i].length + 1;
+      const dist = Math.abs(cumLen - mid);
+      if (dist < bestDist) { bestDist = dist; bestSplit = i + 1; }
+    }
+    return [words.slice(0, bestSplit).join(' '), words.slice(bestSplit).join(' ')];
+  }
+
+  const transliterationPadas = verse.transliteration
+    .split('\n')
+    .flatMap(line => splitHemistich(line.replace(/ \.$/, '').replace(/\./g, ' ').trim()))
+    .filter(p => p.length > 0);
+
+  // Sanskrit uses | (danda) as the hemistich terminator, same pada-split logic.
+  const sanskritPadas = verse.sanskrit
+    .split('\n')
+    .flatMap(line => splitHemistich(line.replace(/ \|$/, '').trim()))
+    .filter(p => p.length > 0);
 
   return (
     <ScrollView
@@ -85,11 +113,17 @@ export function VerseDisplay({
             </Text>
           </View>
           {showSanskrit ? (
-            <Text style={[styles.sanskrit, { color: c.sanskrit, fontSize: fs(22), lineHeight: fs(36) }]}>{verse.sanskrit}</Text>
+            <View style={styles.padaBlock}>
+              {sanskritPadas.map((pada, i) => (
+                <Text key={i} style={[styles.sanskritLine, { color: c.sanskrit, fontSize: fs(20), lineHeight: fs(32) }]}>{pada}</Text>
+              ))}
+            </View>
           ) : (
-            transliterationLines.map((line, i) => (
-              <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(18), lineHeight: fs(28) }]}>{line}</Text>
-            ))
+            <View style={styles.padaBlock}>
+              {transliterationPadas.map((pada, i) => (
+                <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(15), lineHeight: fs(26) }]}>{pada}</Text>
+              ))}
+            </View>
           )}
         </TouchableOpacity>
       ) : (
@@ -107,11 +141,17 @@ export function VerseDisplay({
             </Text>
           </View>
           {showSanskrit ? (
-            <Text style={[styles.sanskrit, { color: c.sanskrit, fontSize: fs(22), lineHeight: fs(36) }]}>{verse.sanskrit}</Text>
+            <View style={styles.padaBlock}>
+              {sanskritPadas.map((pada, i) => (
+                <Text key={i} style={[styles.sanskritLine, { color: c.sanskrit, fontSize: fs(20), lineHeight: fs(32) }]}>{pada}</Text>
+              ))}
+            </View>
           ) : (
-            transliterationLines.map((line, i) => (
-              <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(18), lineHeight: fs(28) }]}>{line}</Text>
-            ))
+            <View style={styles.padaBlock}>
+              {transliterationPadas.map((pada, i) => (
+                <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(15), lineHeight: fs(26) }]}>{pada}</Text>
+              ))}
+            </View>
           )}
         </TouchableOpacity>
       )}
@@ -233,18 +273,37 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: 0.2,
   },
+  sanskritLine: {
+    fontSize: 20,
+    lineHeight: 32,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
   sanskrit: {
     fontSize: 22,
     lineHeight: 36,
     fontWeight: '400',
     letterSpacing: 0.5,
   },
+  padaBlock: {
+    alignItems: 'center',
+    paddingTop: 4,
+  },
   transliterationLine: {
-    fontSize: 18,
-    lineHeight: 28,
+    fontSize: 15,
+    lineHeight: 26,
     fontStyle: 'italic',
     letterSpacing: 0.3,
-    marginBottom: 6,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  verseMarker: {
+    marginTop: 10,
+    letterSpacing: 1,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   translationText: {
     fontSize: 16,

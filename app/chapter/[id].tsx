@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, useWindowDimensions, ScrollView,
+  ActivityIndicator, useWindowDimensions, ScrollView, Modal, Pressable,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,8 +16,9 @@ type ListItem = { type: 'intro' } | { type: 'verse'; verse: Verse };
 
 export default function ChapterScreen() {
   const c = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, verse: verseParam } = useLocalSearchParams<{ id: string; verse?: string }>();
   const chapterNum = parseInt(id ?? '1', 10);
+  const initialVerseIndex = verseParam ? parseInt(verseParam, 10) : 0; // 0 = intro card
   const { getChapter, loading } = useGitaData();
   const { settings, loaded } = useSettings();
   const { width } = useWindowDimensions();
@@ -26,6 +27,7 @@ export default function ChapterScreen() {
   const [modeOverride, setModeOverride] = useState<'list' | 'pager' | null>(null);
   const mode = modeOverride ?? (loaded ? settings.browse_scroll_mode : 'list');
   const [cardHeight, setCardHeight] = useState(0);
+  const [showVersePicker, setShowVersePicker] = useState(false);
 
   // Global script toggle — shared across all verse cards
   const [showSanskrit, setShowSanskrit] = useState(false);
@@ -48,13 +50,13 @@ export default function ChapterScreen() {
 
   // Called once each FlatList has finished its own layout — scroll imperatively.
   const handlePagerLayout = useCallback(() => {
-    const idx = currentIndexRef.current;
+    const idx = currentIndexRef.current > 0 ? currentIndexRef.current : initialVerseIndex;
     if (idx > 0) pagerRef.current?.scrollToIndex({ index: idx, animated: false });
-  }, []);
+  }, [initialVerseIndex]);
   const handleListLayout = useCallback(() => {
-    const idx = currentIndexRef.current;
+    const idx = currentIndexRef.current > 0 ? currentIndexRef.current : initialVerseIndex;
     if (idx > 0) listRef.current?.scrollToIndex({ index: idx, animated: false });
-  }, []);
+  }, [initialVerseIndex]);
 
   // Local browse text size (does not persist to settings)
   const BROWSE_TEXT_STEPS = [0.75, 0.85, 1.0, 1.15, 1.3];
@@ -135,7 +137,7 @@ export default function ChapterScreen() {
               onLayout={handlePagerLayout}
               renderItem={({ item }) =>
                 item.type === 'intro' ? (
-                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} />
+                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} />
                 ) : (
                   <VerseContent
                     verse={item.verse}
@@ -148,6 +150,7 @@ export default function ChapterScreen() {
                     textScale={settings.text_size * browseTextMult}
                     showSanskrit={showSanskrit}
                     onToggleSanskrit={() => setShowSanskrit(s => !s)}
+                    onVerseBadgePress={() => setShowVersePicker(true)}
                   />
                 )
               }
@@ -166,7 +169,7 @@ export default function ChapterScreen() {
               onLayout={handleListLayout}
               renderItem={({ item }) =>
                 item.type === 'intro' ? (
-                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} />
+                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} />
                 ) : (
                   <VerseContent
                     verse={item.verse}
@@ -179,6 +182,7 @@ export default function ChapterScreen() {
                     textScale={settings.text_size * browseTextMult}
                     showSanskrit={showSanskrit}
                     onToggleSanskrit={() => setShowSanskrit(s => !s)}
+                    onVerseBadgePress={() => setShowVersePicker(true)}
                   />
                 )
               }
@@ -186,18 +190,47 @@ export default function ChapterScreen() {
           )
         )}
       </View>
+
+      {/* Verse picker modal */}
+      <Modal visible={showVersePicker} transparent animationType="fade" onRequestClose={() => setShowVersePicker(false)}>
+        <Pressable style={styles.pickerOverlay} onPress={() => setShowVersePicker(false)}>
+          <Pressable style={[styles.pickerSheet, { backgroundColor: c.surface, borderColor: c.cardBorder }]} onPress={() => {}}>
+            <Text style={[styles.pickerTitle, { color: c.accent }]}>Jump to verse</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.pickerGrid}>
+                {chapter.verses.map(v => (
+                  <TouchableOpacity
+                    key={v.verse}
+                    style={[styles.pickerItem, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}
+                    onPress={() => {
+                      setShowVersePicker(false);
+                      // index = verse number (intro is 0, verse 1 is index 1)
+                      const idx = v.verse;
+                      const ref = mode === 'pager' ? pagerRef : listRef;
+                      ref.current?.scrollToIndex({ index: idx, animated: true });
+                    }}
+                  >
+                    <Text style={[styles.pickerItemText, { color: c.primary }]}>{v.verse}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
 function ChapterIntroCard({
-  chapter, c, width, height, textScale,
+  chapter, c, width, height, textScale, onVersePickerPress,
 }: {
   chapter: Chapter;
   c: ReturnType<typeof useTheme>;
   width: number;
   height: number;
   textScale: number;
+  onVersePickerPress?: () => void;
 }) {
   const BASE_HEIGHT = 500;
   const scale = Math.min(Math.max(height / BASE_HEIGHT, 1.0), 1.9) * textScale;
@@ -210,11 +243,11 @@ function ChapterIntroCard({
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.cardBorder, minHeight: height - 48 }]}>
-          {/* Inline chapter badge */}
-          <View style={[styles.introBadge, { backgroundColor: c.surfaceAlt }]}>
+          {/* Inline chapter badge — tap to jump to a verse */}
+          <TouchableOpacity style={[styles.introBadge, { backgroundColor: c.surfaceAlt }]} onPress={onVersePickerPress} hitSlop={8}>
             <Text style={[styles.introBadgeLabel, { color: c.textMuted, fontSize: fs(9) }]}>Chapter</Text>
             <Text style={[styles.introBadgeNum, { color: c.primary, fontSize: fs(15) }]}>{chapter.chapter}</Text>
-          </View>
+          </TouchableOpacity>
 
           {/* Sanskrit name */}
           {chapter.name ? (
@@ -266,6 +299,7 @@ function VerseContent({
   textScale,
   showSanskrit,
   onToggleSanskrit,
+  onVerseBadgePress,
 }: {
   verse: Verse;
   chapterNum: number;
@@ -277,8 +311,27 @@ function VerseContent({
   textScale: number;
   showSanskrit: boolean;
   onToggleSanskrit: () => void;
+  onVerseBadgePress?: () => void;
 }) {
-  const lines = verse.transliteration.split('\n').filter(l => l.trim());
+  function splitHemistich(hemistich: string): string[] {
+    const words = hemistich.trim().split(/\s+/);
+    if (words.length <= 2) return [hemistich.trim()];
+    const totalLen = hemistich.trim().length;
+    const mid = totalLen / 2;
+    let cumLen = 0;
+    let bestSplit = Math.floor(words.length / 2);
+    let bestDist = Infinity;
+    for (let i = 0; i < words.length - 1; i++) {
+      cumLen += words[i].length + 1;
+      const dist = Math.abs(cumLen - mid);
+      if (dist < bestDist) { bestDist = dist; bestSplit = i + 1; }
+    }
+    return [words.slice(0, bestSplit).join(' '), words.slice(bestSplit).join(' ')];
+  }
+  const lines = verse.transliteration
+    .split('\n')
+    .flatMap(line => splitHemistich(line.replace(/ \.$/, '').replace(/\./g, ' ').trim()))
+    .filter(p => p.length > 0);
   const translationKey = verse.translations[preferredTranslation]
     ? preferredTranslation
     : TRANSLATION_KEYS.find(k => verse.translations[k]);
@@ -299,11 +352,11 @@ function VerseContent({
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.cardBorder, minHeight: height - 48 }]}>
           {/* Header — fixed small */}
           <View style={styles.cardHeader}>
-            <View style={[styles.numBadge, { backgroundColor: c.surfaceAlt }]}>
+            <TouchableOpacity style={[styles.numBadge, { backgroundColor: c.surfaceAlt }]} onPress={onVerseBadgePress} hitSlop={8}>
               <Text style={[styles.numText, { color: c.primary }]}>
                 {chapterNum}.{verse.verse}
               </Text>
-            </View>
+            </TouchableOpacity>
             <Text style={[styles.ofTotal, { color: c.textMuted }]}>of {totalVerses}</Text>
             <TouchableOpacity
               onPress={() => router.push(`/verse/${chapterNum}/${verse.verse}`)}
@@ -330,15 +383,24 @@ function VerseContent({
               </Text>
             </View>
             {showSanskrit ? (
-              <Text style={[styles.sanskrit, { color: c.sanskrit, fontSize: fsS(21), lineHeight: fsS(35) }]}>
-                {verse.sanskrit}
-              </Text>
+              <View style={{ alignItems: 'center', paddingTop: 4 }}>
+                {verse.sanskrit.split('\n')
+                  .flatMap(line => splitHemistich(line.replace(/ \|$/, '').trim()))
+                  .filter(p => p.length > 0)
+                  .map((pada, i) => (
+                    <Text key={i} style={[styles.sanskrit, { color: c.sanskrit, fontSize: fsS(19), lineHeight: fsS(32), textAlign: 'center', marginBottom: 4 }]}>
+                      {pada}
+                    </Text>
+                  ))}
+              </View>
             ) : (
-              lines.map((line, i) => (
-                <Text key={i} style={[styles.transLine, { color: c.transliteration, fontSize: fsS(19), lineHeight: fsS(29) }]}>
-                  {line}
-                </Text>
-              ))
+              <View style={{ alignItems: 'center', paddingTop: 4 }}>
+                {lines.map((pada, i) => (
+                  <Text key={i} style={[styles.transLine, { color: c.transliteration, fontSize: fsS(15), lineHeight: fsS(26), textAlign: 'center', marginBottom: 4 }]}>
+                    {pada}
+                  </Text>
+                ))}
+              </View>
             )}
           </TouchableOpacity>
 
@@ -450,4 +512,43 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   moreText: { fontSize: 12, fontWeight: '600' },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerSheet: {
+    width: '80%',
+    maxHeight: '70%',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+  },
+  pickerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  pickerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+  },
+  pickerItem: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerItemText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });

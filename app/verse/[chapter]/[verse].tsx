@@ -68,6 +68,11 @@ export default function VerseScreen() {
         showBack
         title={`BG ${chapterNum}.${verseNum}`}
         subtitle={verse.speaker ? resolveSpeaker(verse.speaker, settings.preferred_language) : undefined}
+        right={
+          <TouchableOpacity onPress={() => router.push(`/chapter/${chapterNum}?verse=${verseNum}`)} hitSlop={10}>
+            <Ionicons name="book-outline" size={22} color={c.primary} />
+          </TouchableOpacity>
+        }
       />
 
       <VerseDisplay

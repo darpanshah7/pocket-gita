@@ -2,7 +2,7 @@
   "expo": {
     "name": "Pocket Gita",
     "slug": "pocket-gita",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gitadaily",
@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.darpan.pocketgita",
+      "buildNumber": "3",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -26,7 +27,8 @@
         "backgroundColor": "#2C1810"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.darpanshah.pocketgita"
+      "package": "com.darpanshah.pocketgita",
+      "versionCode": 3
     },
     "web": {
       "bundler": "metro",

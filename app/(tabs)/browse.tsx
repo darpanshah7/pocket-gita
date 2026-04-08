@@ -27,6 +27,20 @@ export default function BrowseScreen() {
   const results: SearchResult[] = useMemo(() => {
     if (!data || query.trim().length < 2) return [];
     const q = query.toLowerCase();
+
+    // Direct chapter.verse lookup (e.g. "4.4")
+    const cvMatch = query.trim().match(/^(\d+)\.(\d+)$/);
+    if (cvMatch) {
+      const ch = parseInt(cvMatch[1], 10);
+      const v = parseInt(cvMatch[2], 10);
+      const verse = data.chapters[ch - 1]?.verses.find(x => x.verse === v);
+      if (verse) {
+        const text = verse.translations[settings.preferred_translation]?.text ?? '';
+        return [{ verse, snippet: text.slice(0, 120) + (text.length > 120 ? '…' : '') }];
+      }
+      return [];
+    }
+
     const matches: SearchResult[] = [];
     for (const ch of data.chapters) {
       for (const v of ch.verses) {
