@@ -113,9 +113,6 @@ export function VerseDisplay({
               {transliterationPadas.map((pada, i) => (
                 <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(17), lineHeight: fs(28) }]}>{pada}</Text>
               ))}
-              <Text style={[styles.verseMarker, { color: c.textMuted, fontSize: fs(12) }]}>
-                {'|| '}{verse.chapter}.{verse.verse}{' ||'}
-              </Text>
             </View>
           )}
         </TouchableOpacity>
@@ -140,9 +137,6 @@ export function VerseDisplay({
               {transliterationPadas.map((pada, i) => (
                 <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(17), lineHeight: fs(28) }]}>{pada}</Text>
               ))}
-              <Text style={[styles.verseMarker, { color: c.textMuted, fontSize: fs(12) }]}>
-                {'|| '}{verse.chapter}.{verse.verse}{' ||'}
-              </Text>
             </View>
           )}
         </TouchableOpacity>

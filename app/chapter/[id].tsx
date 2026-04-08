@@ -358,9 +358,6 @@ function VerseContent({
                     {pada}
                   </Text>
                 ))}
-                <Text style={{ color: c.textMuted, fontSize: fsS(12), marginTop: 10, fontStyle: 'italic', letterSpacing: 1 }}>
-                  {'|| '}{chapterNum}.{verse.verse}{' ||'}
-                </Text>
               </View>
             )}
           </TouchableOpacity>
