@@ -111,7 +111,7 @@ export function VerseDisplay({
           ) : (
             <View style={styles.padaBlock}>
               {transliterationPadas.map((pada, i) => (
-                <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(17), lineHeight: fs(28) }]}>{pada}</Text>
+                <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(15), lineHeight: fs(26) }]}>{pada}</Text>
               ))}
             </View>
           )}
@@ -135,7 +135,7 @@ export function VerseDisplay({
           ) : (
             <View style={styles.padaBlock}>
               {transliterationPadas.map((pada, i) => (
-                <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(17), lineHeight: fs(28) }]}>{pada}</Text>
+                <Text key={i} style={[styles.transliterationLine, { color: c.transliteration, fontSize: fs(15), lineHeight: fs(26) }]}>{pada}</Text>
               ))}
             </View>
           )}
@@ -270,8 +270,8 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   transliterationLine: {
-    fontSize: 17,
-    lineHeight: 28,
+    fontSize: 15,
+    lineHeight: 26,
     fontStyle: 'italic',
     letterSpacing: 0.3,
     textAlign: 'center',

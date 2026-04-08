@@ -136,7 +136,7 @@ export default function ChapterScreen() {
               onLayout={handlePagerLayout}
               renderItem={({ item }) =>
                 item.type === 'intro' ? (
-                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} />
+                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} />
                 ) : (
                   <VerseContent
                     verse={item.verse}
@@ -168,7 +168,7 @@ export default function ChapterScreen() {
               onLayout={handleListLayout}
               renderItem={({ item }) =>
                 item.type === 'intro' ? (
-                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} />
+                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} />
                 ) : (
                   <VerseContent
                     verse={item.verse}
@@ -222,13 +222,14 @@ export default function ChapterScreen() {
 }
 
 function ChapterIntroCard({
-  chapter, c, width, height, textScale,
+  chapter, c, width, height, textScale, onVersePickerPress,
 }: {
   chapter: Chapter;
   c: ReturnType<typeof useTheme>;
   width: number;
   height: number;
   textScale: number;
+  onVersePickerPress?: () => void;
 }) {
   const BASE_HEIGHT = 500;
   const scale = Math.min(Math.max(height / BASE_HEIGHT, 1.0), 1.9) * textScale;
@@ -277,9 +278,11 @@ function ChapterIntroCard({
             </Text>
           ) : null}
 
-          <Text style={[styles.introVerseCount, { color: c.textMuted, fontSize: fs(10) }]}>
-            {chapter.verse_count} verses · swipe to begin reading
-          </Text>
+          <TouchableOpacity onPress={onVersePickerPress} hitSlop={8} style={{ alignSelf: 'center' }}>
+            <Text style={[styles.introVerseCount, { color: c.primary, fontSize: fs(10) }]}>
+              {chapter.verse_count} verses · tap to jump to a verse
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -387,7 +390,7 @@ function VerseContent({
             ) : (
               <View style={{ alignItems: 'center', paddingTop: 4 }}>
                 {lines.map((pada, i) => (
-                  <Text key={i} style={[styles.transLine, { color: c.transliteration, fontSize: fsS(17), lineHeight: fsS(28), textAlign: 'center', marginBottom: 4 }]}>
+                  <Text key={i} style={[styles.transLine, { color: c.transliteration, fontSize: fsS(15), lineHeight: fsS(26), textAlign: 'center', marginBottom: 4 }]}>
                     {pada}
                   </Text>
                 ))}
