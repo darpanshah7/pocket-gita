@@ -278,7 +278,25 @@ function VerseContent({
   showSanskrit: boolean;
   onToggleSanskrit: () => void;
 }) {
-  const lines = verse.transliteration.split('\n').filter(l => l.trim());
+  function splitHemistich(hemistich: string): string[] {
+    const words = hemistich.trim().split(/\s+/);
+    if (words.length <= 2) return [hemistich.trim()];
+    const totalLen = hemistich.trim().length;
+    const mid = totalLen / 2;
+    let cumLen = 0;
+    let bestSplit = Math.floor(words.length / 2);
+    let bestDist = Infinity;
+    for (let i = 0; i < words.length - 1; i++) {
+      cumLen += words[i].length + 1;
+      const dist = Math.abs(cumLen - mid);
+      if (dist < bestDist) { bestDist = dist; bestSplit = i + 1; }
+    }
+    return [words.slice(0, bestSplit).join(' '), words.slice(bestSplit).join(' ')];
+  }
+  const lines = verse.transliteration
+    .split('\n')
+    .flatMap(line => splitHemistich(line.replace(/ \.$/, '').replace(/\./g, ' ').trim()))
+    .filter(p => p.length > 0);
   const translationKey = verse.translations[preferredTranslation]
     ? preferredTranslation
     : TRANSLATION_KEYS.find(k => verse.translations[k]);
@@ -334,11 +352,16 @@ function VerseContent({
                 {verse.sanskrit}
               </Text>
             ) : (
-              lines.map((line, i) => (
-                <Text key={i} style={[styles.transLine, { color: c.transliteration, fontSize: fsS(19), lineHeight: fsS(29) }]}>
-                  {line}
+              <View style={{ alignItems: 'center', paddingTop: 4 }}>
+                {lines.map((pada, i) => (
+                  <Text key={i} style={[styles.transLine, { color: c.transliteration, fontSize: fsS(17), lineHeight: fsS(28), textAlign: 'center', marginBottom: 4 }]}>
+                    {pada}
+                  </Text>
+                ))}
+                <Text style={{ color: c.textMuted, fontSize: fsS(12), marginTop: 10, fontStyle: 'italic', letterSpacing: 1 }}>
+                  {'|| '}{chapterNum}.{verse.verse}{' ||'}
                 </Text>
-              ))
+              </View>
             )}
           </TouchableOpacity>
 
