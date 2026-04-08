@@ -73,7 +73,7 @@ export function VerseDisplay({
 
   const transliterationPadas = verse.transliteration
     .split('\n')
-    .flatMap(line => splitHemistich(line.replace(/ \.$/, '').trim()))
+    .flatMap(line => splitHemistich(line.replace(/ \.$/, '').replace(/\./g, ' ').trim()))
     .filter(p => p.length > 0);
 
   return (
