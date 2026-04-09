@@ -40,11 +40,17 @@ export default function ChapterScreen() {
   const currentIndexRef = useRef(0);
   const pagerRef = useRef<FlatList<ListItem>>(null);
   const listRef  = useRef<FlatList<ListItem>>(null);
+  const introScrollRef = useRef<ScrollView>(null);
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0 && viewableItems[0].index != null) {
-      currentIndexRef.current = viewableItems[0].index;
+      const newIdx = viewableItems[0].index;
+      // Reset intro card scroll to top whenever it becomes the active card
+      if (newIdx === 0 && currentIndexRef.current !== 0) {
+        introScrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+      currentIndexRef.current = newIdx;
     }
   }).current;
 
@@ -137,7 +143,8 @@ export default function ChapterScreen() {
               onLayout={handlePagerLayout}
               renderItem={({ item }) =>
                 item.type === 'intro' ? (
-                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} />
+                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} mode="pager" scrollRef={introScrollRef}
+                    onSwipeToNext={() => pagerRef.current?.scrollToIndex({ index: 1, animated: true })} />
                 ) : (
                   <VerseContent
                     verse={item.verse}
@@ -169,7 +176,8 @@ export default function ChapterScreen() {
               onLayout={handleListLayout}
               renderItem={({ item }) =>
                 item.type === 'intro' ? (
-                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} />
+                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} mode="list" scrollRef={introScrollRef}
+                    onSwipeToNext={() => listRef.current?.scrollToIndex({ index: 1, animated: true })} />
                 ) : (
                   <VerseContent
                     verse={item.verse}
@@ -223,67 +231,129 @@ export default function ChapterScreen() {
 }
 
 function ChapterIntroCard({
-  chapter, c, width, height, textScale, onVersePickerPress,
+  chapter, c, width, height, textScale, onVersePickerPress, onSwipeToNext, mode, scrollRef,
 }: {
   chapter: Chapter;
   c: ReturnType<typeof useTheme>;
   width: number;
   height: number;
   textScale: number;
+  mode?: 'list' | 'pager';
+  scrollRef?: React.RefObject<ScrollView>;
   onVersePickerPress?: () => void;
+  onSwipeToNext?: () => void;
 }) {
   const BASE_HEIGHT = 500;
   const scale = Math.min(Math.max(height / BASE_HEIGHT, 1.0), 1.9) * textScale;
   const fs = (n: number) => Math.round(n * scale);
 
-  return (
-    <View style={{ width, height }}>
-      <ScrollView
-        contentContainerStyle={[styles.cardContent, { backgroundColor: c.background }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.cardBorder, minHeight: height - 48 }]}>
-          {/* Inline chapter badge — tap to jump to a verse */}
-          <TouchableOpacity style={[styles.introBadge, { backgroundColor: c.surfaceAlt }]} onPress={onVersePickerPress} hitSlop={8}>
-            <Text style={[styles.introBadgeLabel, { color: c.textMuted, fontSize: fs(9) }]}>Chapter</Text>
-            <Text style={[styles.introBadgeNum, { color: c.primary, fontSize: fs(15) }]}>{chapter.chapter}</Text>
-          </TouchableOpacity>
+  const [expanded, setExpanded] = useState(false);
+  const [textOverflows, setTextOverflows] = useState(false);
+  const clipperHeightRef = useRef(0);
+  const textNaturalHeightRef = useRef(0);
 
-          {/* Sanskrit name */}
-          {chapter.name ? (
-            <Text style={[styles.introSanskrit, { color: c.sanskrit, fontSize: fs(20), lineHeight: fs(30) }]}>
-              {chapter.name}
-            </Text>
-          ) : null}
+  function recheckOverflow() {
+    if (clipperHeightRef.current > 0 && textNaturalHeightRef.current > 0) {
+      const overflows = textNaturalHeightRef.current > clipperHeightRef.current + 2;
+      setTextOverflows(overflows);
+      if (!overflows) setExpanded(false);
+    }
+  }
 
-          {/* Transliterated name */}
-          {chapter.name_transliterated ? (
-            <Text style={[styles.introTranslit, { color: c.text, fontSize: fs(17), lineHeight: fs(24) }]}>
-              {chapter.name_transliterated}
-            </Text>
-          ) : null}
+  // Collapsed: fixed View (no inner scroll) so parent FlatList owns all gestures.
+  // Expanded: ScrollView so user can read the full summary.
+  const cardContent = (
+    <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.cardBorder, flex: 1, justifyContent: 'space-between' }]}>
+      <View style={{ flex: 1 }}>
+        <TouchableOpacity style={[styles.introBadge, { backgroundColor: c.surfaceAlt, marginBottom: 10 }]} onPress={onVersePickerPress} hitSlop={8}>
+          <Text style={[styles.introBadgeLabel, { color: c.textMuted, fontSize: fs(9) }]}>Chapter</Text>
+          <Text style={[styles.introBadgeNum, { color: c.primary, fontSize: fs(15) }]}>{chapter.chapter}</Text>
+        </TouchableOpacity>
 
-          {/* Meaning */}
-          {chapter.name_meaning ? (
-            <Text style={[styles.introMeaning, { color: c.accent, fontSize: fs(13), lineHeight: fs(20) }]}>
-              {chapter.name_meaning}
-            </Text>
-          ) : null}
-
-          <View style={[styles.introDivider, { backgroundColor: c.border }]} />
-
-          {/* Full summary */}
-          {chapter.summary ? (
-            <Text style={[styles.introSummary, { color: c.textSecondary, fontSize: fs(13), lineHeight: fs(21) }]}>
-              {chapter.summary}
-            </Text>
-          ) : null}
-
-          <Text style={[styles.introVerseCount, { color: c.textMuted, fontSize: fs(10) }]}>
-            {chapter.verse_count} verses · swipe to begin reading
+        {chapter.name ? (
+          <Text style={[styles.introSanskrit, { color: c.sanskrit, fontSize: fs(20), lineHeight: fs(30), marginBottom: 4 }]}>
+            {chapter.name}
           </Text>
-        </View>
-      </ScrollView>
+        ) : null}
+
+        {chapter.name_transliterated ? (
+          <Text style={[styles.introTranslit, { color: c.text, fontSize: fs(17), lineHeight: fs(24), marginBottom: 2 }]}>
+            {chapter.name_transliterated}
+          </Text>
+        ) : null}
+
+        {chapter.name_meaning ? (
+          <Text style={[styles.introMeaning, { color: c.accent, fontSize: fs(13), lineHeight: fs(20), marginBottom: 8 }]}>
+            {chapter.name_meaning}
+          </Text>
+        ) : null}
+
+        <View style={[styles.introDivider, { backgroundColor: c.border, marginBottom: 10 }]} />
+
+        {chapter.summary ? (
+          <View style={expanded ? {} : { flex: 1 }}>
+            {/* Hidden unconstrained text — measures true natural height (always rendered) */}
+            <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, opacity: 0 }}>
+              <Text
+                style={[styles.introSummary, { fontSize: fs(13), lineHeight: fs(21) }]}
+                selectable={false}
+                onLayout={e => {
+                  textNaturalHeightRef.current = e.nativeEvent.layout.height;
+                  recheckOverflow();
+                }}
+              >
+                {chapter.summary}
+              </Text>
+            </View>
+
+            {/* Visible text — clips when collapsed */}
+            <View
+              style={expanded ? {} : { flex: 1, overflow: 'hidden' }}
+              onLayout={e => {
+                if (!expanded) {
+                  clipperHeightRef.current = e.nativeEvent.layout.height;
+                  recheckOverflow();
+                }
+              }}
+            >
+              <Text style={[styles.introSummary, { color: c.textSecondary, fontSize: fs(13), lineHeight: fs(21) }]}>
+                {chapter.summary}
+              </Text>
+            </View>
+
+            {textOverflows ? (
+              <TouchableOpacity onPress={() => setExpanded(e => !e)} style={[styles.moreRow, { marginTop: 6 }]} hitSlop={8}>
+                <Text style={[styles.moreText, { color: c.primary, fontSize: fs(12) }]}>
+                  {expanded ? 'Show less' : 'Show more'}
+                </Text>
+                <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={fs(13)} color={c.primary} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+
+      {!expanded ? (
+        <Text style={[styles.introVerseCount, { color: c.textMuted, fontSize: fs(10), marginTop: 8 }]}>
+          {chapter.verse_count} verses · {mode === 'pager' ? 'swipe left' : 'swipe up'} to begin reading
+        </Text>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <View style={[styles.cardContent, { width, height, backgroundColor: c.background }]}>
+      {expanded ? (
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {cardContent}
+        </ScrollView>
+      ) : (
+        cardContent
+      )}
     </View>
   );
 }

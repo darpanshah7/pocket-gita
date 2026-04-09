@@ -89,7 +89,7 @@ export default function BrowseScreen() {
     <View style={[styles.root, { backgroundColor: c.background }]}>
       <ScreenHeader
         title="Browse"
-        subtitle={searchOpen ? undefined : '18 Chapters · 701 Verses'}
+        subtitle={searchOpen ? undefined : '18 Chapters · 700 Verses'}
         right={
           <TouchableOpacity onPress={searchOpen ? closeSearch : openSearch} hitSlop={12}>
             <Ionicons
