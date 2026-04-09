@@ -250,7 +250,6 @@ function ChapterIntroCard({
   const containerHeightRef = useRef(0);
   const contentHeightRef = useRef(0);
   const [innerScrollEnabled, setInnerScrollEnabled] = useState(false);
-  const dragStartOffsetRef = useRef(0);
 
   function updateScrollEnabled() {
     setInnerScrollEnabled(contentHeightRef.current > containerHeightRef.current + 2);
@@ -272,17 +271,10 @@ function ChapterIntroCard({
           contentHeightRef.current = h;
           updateScrollEnabled();
         }}
-        onScrollBeginDrag={e => {
-          dragStartOffsetRef.current = e.nativeEvent.contentOffset.y;
-        }}
         onScrollEndDrag={e => {
           const { contentOffset, contentSize, layoutMeasurement, velocity } = e.nativeEvent;
           const atBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 4;
-          // Only trigger next card if: at the bottom, swiping upward (negative velocity),
-          // AND the drag started near the bottom (not a fast scroll-down-then-back-up)
-          const dragStartedNearBottom =
-            dragStartOffsetRef.current + layoutMeasurement.height >= contentSize.height - 20;
-          if (atBottom && dragStartedNearBottom && (velocity?.y ?? 0) < -0.3) {
+          if (atBottom && (velocity?.y ?? 0) < -0.3) {
             onSwipeToNext?.();
           }
         }}
