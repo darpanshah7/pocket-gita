@@ -40,11 +40,17 @@ export default function ChapterScreen() {
   const currentIndexRef = useRef(0);
   const pagerRef = useRef<FlatList<ListItem>>(null);
   const listRef  = useRef<FlatList<ListItem>>(null);
+  const introScrollRef = useRef<ScrollView>(null);
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0 && viewableItems[0].index != null) {
-      currentIndexRef.current = viewableItems[0].index;
+      const newIdx = viewableItems[0].index;
+      // Reset intro card scroll to top whenever it becomes the active card
+      if (newIdx === 0 && currentIndexRef.current !== 0) {
+        introScrollRef.current?.scrollTo({ y: 0, animated: false });
+      }
+      currentIndexRef.current = newIdx;
     }
   }).current;
 
@@ -137,7 +143,7 @@ export default function ChapterScreen() {
               onLayout={handlePagerLayout}
               renderItem={({ item }) =>
                 item.type === 'intro' ? (
-                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} mode="pager"
+                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} mode="pager" scrollRef={introScrollRef}
                     onSwipeToNext={() => pagerRef.current?.scrollToIndex({ index: 1, animated: true })} />
                 ) : (
                   <VerseContent
@@ -170,7 +176,7 @@ export default function ChapterScreen() {
               onLayout={handleListLayout}
               renderItem={({ item }) =>
                 item.type === 'intro' ? (
-                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} mode="list"
+                  <ChapterIntroCard chapter={chapter} c={c} width={width} height={cardHeight} textScale={settings.text_size * browseTextMult} onVersePickerPress={() => setShowVersePicker(true)} mode="list" scrollRef={introScrollRef}
                     onSwipeToNext={() => listRef.current?.scrollToIndex({ index: 1, animated: true })} />
                 ) : (
                   <VerseContent
@@ -225,7 +231,7 @@ export default function ChapterScreen() {
 }
 
 function ChapterIntroCard({
-  chapter, c, width, height, textScale, onVersePickerPress, onSwipeToNext, mode,
+  chapter, c, width, height, textScale, onVersePickerPress, onSwipeToNext, mode, scrollRef,
 }: {
   chapter: Chapter;
   c: ReturnType<typeof useTheme>;
@@ -233,6 +239,7 @@ function ChapterIntroCard({
   height: number;
   textScale: number;
   mode?: 'list' | 'pager';
+  scrollRef?: React.RefObject<ScrollView>;
   onVersePickerPress?: () => void;
   onSwipeToNext?: () => void;
 }) {
@@ -243,7 +250,7 @@ function ChapterIntroCard({
   const containerHeightRef = useRef(0);
   const contentHeightRef = useRef(0);
   const [innerScrollEnabled, setInnerScrollEnabled] = useState(false);
-  const atBottomRef = useRef(false);
+  const dragStartOffsetRef = useRef(0);
 
   function updateScrollEnabled() {
     setInnerScrollEnabled(contentHeightRef.current > containerHeightRef.current + 2);
@@ -252,9 +259,11 @@ function ChapterIntroCard({
   return (
     <View style={{ width, height }}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[styles.cardContent, { backgroundColor: c.background }]}
         showsVerticalScrollIndicator={false}
         scrollEnabled={innerScrollEnabled}
+        nestedScrollEnabled
         onLayout={e => {
           containerHeightRef.current = e.nativeEvent.layout.height;
           updateScrollEnabled();
@@ -263,14 +272,17 @@ function ChapterIntroCard({
           contentHeightRef.current = h;
           updateScrollEnabled();
         }}
-        onScroll={e => {
-          const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-          atBottomRef.current = contentOffset.y + layoutMeasurement.height >= contentSize.height - 4;
+        onScrollBeginDrag={e => {
+          dragStartOffsetRef.current = e.nativeEvent.contentOffset.y;
         }}
-        scrollEventThrottle={16}
         onScrollEndDrag={e => {
-          // Swipe up (negative y velocity) at the bottom → go to next card
-          if (atBottomRef.current && (e.nativeEvent.velocity?.y ?? 0) < -0.3) {
+          const { contentOffset, contentSize, layoutMeasurement, velocity } = e.nativeEvent;
+          const atBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 4;
+          // Only trigger next card if: at the bottom, swiping upward (negative velocity),
+          // AND the drag started near the bottom (not a fast scroll-down-then-back-up)
+          const dragStartedNearBottom =
+            dragStartOffsetRef.current + layoutMeasurement.height >= contentSize.height - 20;
+          if (atBottom && dragStartedNearBottom && (velocity?.y ?? 0) < -0.3) {
             onSwipeToNext?.();
           }
         }}
