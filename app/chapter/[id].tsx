@@ -272,9 +272,7 @@ function ChapterIntroCard({
           updateScrollEnabled();
         }}
         onScrollEndDrag={e => {
-          const { contentOffset, contentSize, layoutMeasurement, velocity } = e.nativeEvent;
-          const atBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 4;
-          if (atBottom && (velocity?.y ?? 0) < -0.3) {
+          if ((e.nativeEvent.velocity?.y ?? 0) < -0.5) {
             onSwipeToNext?.();
           }
         }}
