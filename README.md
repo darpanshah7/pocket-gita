@@ -1,5 +1,6 @@
 # Pocket Gita
 [![Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917](https://github.com/user-attachments/assets/55702caa-312a-4e8a-b22e-2ebce9f3ef05)](https://apps.apple.com/us/app/pocket-gita-the-bhagavad-gita/id6761732142)
+- Android APK available in releases
 
 A free, open-source mobile app for reading and reflecting on the Bhagavad Gita.
 - 18 chapters, 701 verses
