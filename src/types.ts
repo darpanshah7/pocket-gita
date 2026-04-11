@@ -36,9 +36,7 @@ export interface Chapter {
   name: string;
   name_transliterated: string;
   name_meaning: string;
-  name_meaning_hi: string;
   summary: string;
-  summary_hi: string;
   verse_count: number;
   verses: Verse[];
 }
@@ -75,7 +73,7 @@ export interface Note {
 }
 
 export type VerseOrder = 'sequential' | 'random';
-export type PreferredLanguage = 'english' | 'hindi' | 'sanskrit';
+export type PreferredLanguage = 'english' | 'sanskrit';
 
 const SPEAKER_EN: Record<string, string> = {
   'धृतराष्ट्र': 'Dhritarashtra',
@@ -86,7 +84,7 @@ const SPEAKER_EN: Record<string, string> = {
 
 export function resolveSpeaker(speaker: string, language: PreferredLanguage): string {
   if (language === 'english') return SPEAKER_EN[speaker] ?? speaker;
-  return speaker; // sanskrit & hindi both use Devanagari
+  return speaker; // sanskrit uses Devanagari
 }
 export type BrowseScrollMode = 'list' | 'pager';
 export type AppTheme = 'light' | 'dark' | 'system';
